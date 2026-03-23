@@ -1,4 +1,5 @@
 from django.conf.urls import include, url
+from django.urls import path
 
 urlpatterns = [
     url(r"^api/", include("account.urls.oj")),
@@ -14,4 +15,5 @@ urlpatterns = [
     url(r"^api/", include("submission.urls.oj")),
     url(r"^api/admin/", include("submission.urls.admin")),
     url(r"^api/admin/", include("utils.urls")),
+    path('api/spark/', include('spark_ai.urls')),
 ]

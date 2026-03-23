@@ -4,11 +4,11 @@ from sparkai.core.messages import ChatMessage
 
 def get_spark_client():
     return ChatSparkLLM(
-        spark_api_url=settings.wss://spark-api.xf-yun.com/chat/pro-128k,
-        spark_app_id=settings.073e07dd,
-        spark_api_key=settings.89c58c9ff806b199ebb047b5781051fe,
-        spark_api_secret=settings.YmRlMzg1ZWY3NTU0YTFmZmI1ODJiNjE4,
-        spark_llm_domain=settings.pro-128k,
+        spark_api_url=settings.SPARKAI_URL,
+        spark_app_id=settings.SPARKAI_APP_ID,
+        spark_api_key=settings.SPARKAI_API_KEY,
+        spark_api_secret=settings.SPARKAI_API_SECRET,
+        spark_llm_domain=settings.SPARKAI_DOMAIN,
         streaming=False,
     )
 
