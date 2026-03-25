@@ -16,4 +16,5 @@ urlpatterns = [
     url(r"^api/admin/", include("submission.urls.admin")),
     url(r"^api/admin/", include("utils.urls")),
     path('api/spark/', include('spark_ai.urls')),
+    path('api/chat/', include('spark_ai.urls')),
 ]
