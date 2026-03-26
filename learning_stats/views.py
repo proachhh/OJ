@@ -1,7 +1,6 @@
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q
-from problem.models import Problem, Tag   # 根据实际路径调整
+from problem.models import Problem, ProblemTag
 from submission.models import Submission
 
 @login_required
@@ -14,12 +13,10 @@ def learning_stats(request):
     accuracy = round(total_ac / total_submissions * 100, 1) if total_submissions else 0
 
     # 知识点统计
-    tags = Tag.objects.all().prefetch_related('problem_set')
+    tags = ProblemTag.objects.all().prefetch_related('problem_set')
     tag_stats = []
     for tag in tags:
-        # 该标签下的所有题目
         problem_ids = tag.problem_set.values_list('id', flat=True)
-        # 用户在这些题目上的提交
         submissions = Submission.objects.filter(user=user, problem_id__in=problem_ids)
         total = submissions.count()
         ac = submissions.filter(result=4).count()
@@ -51,7 +48,6 @@ def recommend(request):
     data = [{
         'id': p.id,
         'title': p.title,
-        'difficulty': p.difficulty,  # 如果 Problem 有 difficulty 字段
-        'tags': [tag.name for tag in p.tags.all()],
+        'tags': [tag.name for tag in p.tags.all()],   # 注意：Problem 的 tags 字段是 ManyToManyField，这里取所有关联的 ProblemTag 的 name
     } for p in recommended]
     return JsonResponse({'recommendations': data})
