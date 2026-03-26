@@ -9,7 +9,8 @@ from django.db import migrations, models
 
 import account.models
 
-
+# 这一层代码用于创建数据库，后续是对表结构的修改
+# 首次部署/新环境时才使用，后续跑项目不需要执行这些
 class Migration(migrations.Migration):
 
     initial = True

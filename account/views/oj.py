@@ -27,7 +27,8 @@ from ..serializers import (TwoFactorAuthCodeSerializer, UserProfileSerializer,
                            EditUserProfileSerializer, ImageUploadForm)
 from ..tasks import send_email_async
 
-
+# 前台普通用户视图
+#获取/更新个人信息
 class UserProfileAPI(APIView):
     @method_decorator(ensure_csrf_cookie)
     def get(self, request, **kwargs):
@@ -60,7 +61,7 @@ class UserProfileAPI(APIView):
         user_profile.save()
         return self.success(UserProfileSerializer(user_profile, show_real_name=True).data)
 
-
+#上传头像
 class AvatarUploadAPI(APIView):
     request_parsers = ()
 
@@ -87,7 +88,7 @@ class AvatarUploadAPI(APIView):
         user_profile.save()
         return self.success("Succeeded")
 
-
+#两步验证管理
 class TwoFactorAuthAPI(APIView):
     @login_required
     def get(self, request):
@@ -134,7 +135,7 @@ class TwoFactorAuthAPI(APIView):
         else:
             return self.error("Invalid code")
 
-
+#检查是否需要 TFA
 class CheckTFARequiredAPI(APIView):
     @validate_serializer(UsernameOrEmailCheckSerializer)
     def post(self, request):
@@ -151,7 +152,7 @@ class CheckTFARequiredAPI(APIView):
                 pass
         return self.success({"result": result})
 
-
+# 用户登录
 class UserLoginAPI(APIView):
     @validate_serializer(UserLoginSerializer)
     def post(self, request):
@@ -180,13 +181,13 @@ class UserLoginAPI(APIView):
         else:
             return self.error("Invalid username or password")
 
-
+# 用户登出
 class UserLogoutAPI(APIView):
     def get(self, request):
         auth.logout(request)
         return self.success()
 
-
+# 检查用户名/邮箱是否重复
 class UsernameOrEmailCheck(APIView):
     @validate_serializer(UsernameOrEmailCheckSerializer)
     def post(self, request):
@@ -205,7 +206,7 @@ class UsernameOrEmailCheck(APIView):
             result["email"] = User.objects.filter(email=data["email"].lower()).exists()
         return self.success(result)
 
-
+#用户注册
 class UserRegisterAPI(APIView):
     @validate_serializer(UserRegisterSerializer)
     def post(self, request):
@@ -231,7 +232,7 @@ class UserRegisterAPI(APIView):
         UserProfile.objects.create(user=user)
         return self.success("Succeeded")
 
-
+#修改邮箱
 class UserChangeEmailAPI(APIView):
     @validate_serializer(UserChangeEmailSerializer)
     @login_required
@@ -253,7 +254,7 @@ class UserChangeEmailAPI(APIView):
         else:
             return self.error("Wrong password")
 
-
+# 修改密码
 class UserChangePasswordAPI(APIView):
     @validate_serializer(UserChangePasswordSerializer)
     @login_required
@@ -276,7 +277,7 @@ class UserChangePasswordAPI(APIView):
         else:
             return self.error("Invalid old password")
 
-
+# 申请重置密码
 class ApplyResetPasswordAPI(APIView):
     @validate_serializer(ApplyResetPasswordSerializer)
     def post(self, request):
@@ -309,7 +310,7 @@ class ApplyResetPasswordAPI(APIView):
                               content=email_html)
         return self.success("Succeeded")
 
-
+# 重置密码
 class ResetPasswordAPI(APIView):
     @validate_serializer(ResetPasswordSerializer)
     def post(self, request):
@@ -329,7 +330,7 @@ class ResetPasswordAPI(APIView):
         user.save()
         return self.success("Succeeded")
 
-
+# 会话管理
 class SessionManagementAPI(APIView):
     @login_required
     def get(self, request):
@@ -372,7 +373,7 @@ class SessionManagementAPI(APIView):
         else:
             return self.error("Invalid session_key")
 
-
+# 用户排行榜
 class UserRankAPI(APIView):
     def get(self, request):
         rule_type = request.GET.get("rule")
@@ -386,7 +387,7 @@ class UserRankAPI(APIView):
             profiles = profiles.filter(total_score__gt=0).order_by("-total_score")
         return self.success(self.paginate_data(request, profiles, RankInfoSerializer))
 
-
+# 用户信息
 class ProfileProblemDisplayIDRefreshAPI(APIView):
     @login_required
     def get(self, request):
@@ -405,7 +406,7 @@ class ProfileProblemDisplayIDRefreshAPI(APIView):
         profile.save(update_fields=["acm_problems_status", "oi_problems_status"])
         return self.success()
 
-
+# 开放API
 class OpenAPIAppkeyAPI(APIView):
     @login_required
     def post(self, request):
@@ -417,7 +418,7 @@ class OpenAPIAppkeyAPI(APIView):
         user.save()
         return self.success({"appkey": api_appkey})
 
-
+# SSO
 class SSOAPI(CSRFExemptAPIView):
     @login_required
     def get(self, request):

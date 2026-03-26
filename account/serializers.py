@@ -4,37 +4,38 @@ from utils.api import serializers, UsernameSerializer
 
 from .models import AdminType, ProblemPermission, User, UserProfile
 
-
+# Serializer关联json与Model，用于序列化或反序列化数据
+# 用户登录
 class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
     tfa_code = serializers.CharField(required=False, allow_blank=True)
 
-
+# 忘记密码
 class UsernameOrEmailCheckSerializer(serializers.Serializer):
     username = serializers.CharField(required=False)
     email = serializers.EmailField(required=False)
 
-
+# 用户注册
 class UserRegisterSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=32)
     password = serializers.CharField(min_length=6)
     email = serializers.EmailField(max_length=64)
     captcha = serializers.CharField()
 
-
+# 修改密码
 class UserChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField()
     new_password = serializers.CharField(min_length=6)
     tfa_code = serializers.CharField(required=False, allow_blank=True)
 
-
+# 修改邮箱
 class UserChangeEmailSerializer(serializers.Serializer):
     password = serializers.CharField()
     new_email = serializers.EmailField(max_length=64)
     tfa_code = serializers.CharField(required=False, allow_blank=True)
 
-
+# 批量生成用户
 class GenerateUserSerializer(serializers.Serializer):
     prefix = serializers.CharField(max_length=16, allow_blank=True)
     suffix = serializers.CharField(max_length=16, allow_blank=True)

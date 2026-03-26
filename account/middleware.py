@@ -6,7 +6,7 @@ from django.utils.deprecation import MiddlewareMixin
 from utils.api import JSONResponse
 from account.models import User
 
-
+# 支持通过 API Key 进行认证
 class APITokenAuthMiddleware(MiddlewareMixin):
     def process_request(self, request):
         appkey = request.META.get("HTTP_APPKEY")
@@ -18,7 +18,7 @@ class APITokenAuthMiddleware(MiddlewareMixin):
             except User.DoesNotExist:
                 pass
 
-
+# 记录用户的会话信息
 class SessionRecordMiddleware(MiddlewareMixin):
     def process_request(self, request):
         request.ip = request.META.get(settings.IP_HEADER, request.META.get("REMOTE_ADDR"))

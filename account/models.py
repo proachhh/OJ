@@ -22,7 +22,8 @@ class UserManager(models.Manager):
     def get_by_natural_key(self, username):
         return self.get(**{f"{self.model.USERNAME_FIELD}__iexact": username})
 
-
+# 用户模型
+# 默认提供的AbstractBaseUser仅包含认证逻辑
 class User(AbstractBaseUser):
     username = models.TextField(unique=True)
     email = models.TextField(null=True)
@@ -65,7 +66,7 @@ class User(AbstractBaseUser):
     class Meta:
         db_table = "user"
 
-
+# 关联UserProfile 表
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     # acm_problems_status examples:

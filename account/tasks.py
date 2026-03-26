@@ -6,7 +6,7 @@ from utils.shortcuts import send_email, DRAMATIQ_WORKER_ARGS
 
 logger = logging.getLogger(__name__)
 
-
+# 发送邮件
 @dramatiq.actor(**DRAMATIQ_WORKER_ARGS(max_retries=3))
 def send_email_async(from_name, to_email, to_name, subject, content):
     if not SysOptions.smtp_config:

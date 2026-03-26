@@ -8,7 +8,8 @@ from utils.api import JSONResponse, APIError
 from utils.constants import CONTEST_PASSWORD_SESSION_KEY
 from .models import ProblemPermission
 
-
+# 装饰层相当于SSM的AOP
+# 函数装饰器,描述符（Descriptor）类
 class BasePermissionDecorator(object):
     def __init__(self, func):
         self.func = func
@@ -32,24 +33,24 @@ class BasePermissionDecorator(object):
     def check_permission(self):
         raise NotImplementedError()
 
-
+# 登录,继承BasePermissionDecorator(权限验证的基类装饰器)类
 class login_required(BasePermissionDecorator):
     def check_permission(self):
         return self.request.user.is_authenticated
 
-
+# 管理员权限
 class super_admin_required(BasePermissionDecorator):
     def check_permission(self):
         user = self.request.user
         return user.is_authenticated and user.is_super_admin()
 
-
+# 管理员权限
 class admin_role_required(BasePermissionDecorator):
     def check_permission(self):
         user = self.request.user
         return user.is_authenticated and user.is_admin_role()
 
-
+# 题目权限
 class problem_permission_required(admin_role_required):
     def check_permission(self):
         if not super(problem_permission_required, self).check_permission():
@@ -58,7 +59,7 @@ class problem_permission_required(admin_role_required):
             return False
         return True
 
-
+# 比赛权限
 def check_contest_password(password, contest_password):
     if not (password and contest_password):
         return False
@@ -84,7 +85,7 @@ def check_contest_password(password, contest_password):
         else:
             return False
 
-
+# 比赛权限
 def check_contest_permission(check_type="details"):
     """
     只供Class based view 使用，检查用户是否有权进入该contest, check_type 可选 details, problems, ranks, submissions
@@ -135,7 +136,7 @@ def check_contest_permission(check_type="details"):
         return _check_permission
     return decorator
 
-
+# 权限
 def ensure_created_by(obj, user):
     e = APIError(msg=f"{obj.__class__.__name__} does not exist")
     if not user.is_admin_role():

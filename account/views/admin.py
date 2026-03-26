@@ -16,7 +16,7 @@ from ..models import AdminType, ProblemPermission, User, UserProfile
 from ..serializers import EditUserSerializer, UserAdminSerializer, GenerateUserSerializer
 from ..serializers import ImportUserSeralizer
 
-
+# 用户管理 (增删改查、导入导出)
 class UserAdminAPI(APIView):
     @validate_serializer(ImportUserSeralizer)
     @super_admin_required
@@ -132,7 +132,7 @@ class UserAdminAPI(APIView):
         User.objects.filter(id__in=ids).delete()
         return self.success()
 
-
+# 批量生成用户账号
 class GenerateUserAPI(APIView):
     @super_admin_required
     def get(self, request):
