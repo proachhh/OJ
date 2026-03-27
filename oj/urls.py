@@ -1,8 +1,7 @@
 from django.conf.urls import include, url
 from django.urls import path
 
-import learning_stats
-from learning_stats.views import recommend
+from learning_stats.views import learning_stats, recommend
 
 urlpatterns = [
     url(r"^api/", include("account.urls.oj")),
