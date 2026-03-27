@@ -2,14 +2,15 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from problem.models import Problem, ProblemTag
 from submission.models import Submission
+from submission.models import Submission, JudgeStatus
 
 @login_required
 def learning_stats(request):
     user = request.user
 
     # 整体统计
-    total_submissions = Submission.objects.filter(user=user).count()
-    total_ac = Submission.objects.filter(user=user, result=4).count()
+    total_submissions = Submission.objects.filter(user_id=user.id).count()
+    total_ac = Submission.objects.filter(user_id=user.id, result=4).count()
     accuracy = round(total_ac / total_submissions * 100, 1) if total_submissions else 0
 
     # 知识点统计
@@ -17,9 +18,9 @@ def learning_stats(request):
     tag_stats = []
     for tag in tags:
         problem_ids = tag.problem_set.values_list('id', flat=True)
-        submissions = Submission.objects.filter(user=user, problem_id__in=problem_ids)
+        submissions = Submission.objects.filter(user_id=user.id, problem_id__in=problem_ids)
         total = submissions.count()
-        ac = submissions.filter(result=4).count()
+        ac = submissions.filter(result=JudgeStatus.ACCEPTED).count()
         acc_rate = round(ac / total * 100, 1) if total else 0
         tag_stats.append({
             'tag_name': tag.name,
@@ -42,12 +43,13 @@ def learning_stats(request):
 def recommend(request):
     user = request.user
     # 用户已经做过的题目 ID（去重）
-    done_ids = Submission.objects.filter(user=user).values_list('problem_id', flat=True).distinct()
+    done_ids = Submission.objects.filter(user_id=user.id).values_list('problem_id', flat=True).distinct()
     # 推荐未做过的题目，按通过次数降序（热门程度）
-    recommended = Problem.objects.exclude(id__in=done_ids).order_by('-accepted_number')[:10]
+    recommended = Problem.objects.exclude(id__in=done_ids).order_by('-accepted_number')[:5]
     data = [{
-        'id': p.id,
+        '_id': p.id,
         'title': p.title,
-        'tags': [tag.name for tag in p.tags.all()],   # 注意：Problem 的 tags 字段是 ManyToManyField，这里取所有关联的 ProblemTag 的 name
+        'difficulty': p.difficulty,
+        'tags': [tag.name for tag in p.tags.all()],
     } for p in recommended]
     return JsonResponse({'recommendations': data})
