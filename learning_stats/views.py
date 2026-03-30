@@ -4,16 +4,18 @@ from django.db.models import Count, Q, FloatField, F
 from django.db.models.functions import Cast
 from problem.models import Problem, ProblemTag
 from submission.models import Submission, JudgeStatus
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models.functions import TruncDate
 
+# 返回当前用户的整体学习统计、知识点掌握情况以及在全体用户中的击败百分比。
 @login_required
 def learning_stats(request):
     user = request.user
-
     # 整体统计
     total_submissions = Submission.objects.filter(user_id=user.id).count()
     total_ac = Submission.objects.filter(user_id=user.id, result=JudgeStatus.ACCEPTED).count()
     accuracy = round(total_ac / total_submissions * 100, 1) if total_submissions else 0
-
     # 知识点统计
     tags = ProblemTag.objects.all().prefetch_related('problem_set')
     tag_stats = []
@@ -30,10 +32,8 @@ def learning_stats(request):
             'accuracy': acc_rate,
         })
     tag_stats.sort(key=lambda x: x['accuracy'])
-
     # 击败百分比
     beat_percent = get_beat_percent(user)
-
     data = {
         'total_submissions': total_submissions,
         'total_ac': total_ac,
@@ -43,6 +43,8 @@ def learning_stats(request):
     }
     return JsonResponse(data)
 
+# 辅助函数：计算当前用户的正确率在所有有提交记录的用户中的排名百分比（即击败了多少百分比的用户）。
+@login_required
 def get_beat_percent(user):
     # 计算当前用户的正确率
     user_stats = Submission.objects.filter(user_id=user.id).aggregate(
@@ -69,6 +71,7 @@ def get_beat_percent(user):
     beat = (total_users - higher_count) / total_users * 100
     return round(beat, 1)
 
+# 为当前用户推荐未做过的题目，支持分页（limit 和 offset 参数），并返回每条推荐的理由。
 @login_required
 def recommend(request):
     user = request.user
@@ -93,6 +96,8 @@ def recommend(request):
         })
     return JsonResponse({'recommendations': data, 'total': total})
 
+# 辅助函数：基于用户已经正确解答的题目，分析当前推荐题目的标签交集，生成推荐理由。
+@login_required
 def get_recommend_reason(user, problem):
     # 获取用户做过的题目的标签（仅考虑通过的题目）
     user_ac_problems = Submission.objects.filter(
@@ -107,3 +112,36 @@ def get_recommend_reason(user, problem):
         return f"基于您做过的 {tags_str} 题目推荐"
     else:
         return "热门题目推荐"
+
+# 返回当前用户最近 N 天的每日正确率。支持参数 days 来指定天数，默认值为 7。
+@login_required
+def learning_trend(request):
+    days = int(request.GET.get('days', 7))
+    end_date = timezone.now().date()
+    start_date = end_date - timedelta(days=days-1)
+
+    # 获取用户每天的正确提交数和总提交数
+    submissions = Submission.objects.filter(
+        user_id=request.user.id,
+        create_time__date__gte=start_date,
+        create_time__date__lte=end_date
+    ).annotate(date=TruncDate('create_time')).values('date').annotate(
+        total=Count('id'),
+        ac=Count('id', filter=Q(result=JudgeStatus.ACCEPTED))
+    ).order_by('date')
+
+    # 生成连续日期列表
+    date_range = [start_date + timedelta(days=i) for i in range(days)]
+    result = []
+    for d in date_range:
+        item = next((s for s in submissions if s['date'] == d), None)
+        if item and item['total'] > 0:
+            rate = round(item['ac'] / item['total'] * 100, 1)
+        else:
+            rate = 0
+        result.append({
+            'date': d.strftime('%m/%d'),
+            'accuracy': rate
+        })
+    return JsonResponse({'trend': result})
+
