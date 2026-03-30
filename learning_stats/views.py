@@ -44,7 +44,6 @@ def learning_stats(request):
     return JsonResponse(data)
 
 # 辅助函数：计算当前用户的正确率在所有有提交记录的用户中的排名百分比（即击败了多少百分比的用户）。
-@login_required
 def get_beat_percent(user):
     # 计算当前用户的正确率
     user_stats = Submission.objects.filter(user_id=user.id).aggregate(
@@ -97,7 +96,6 @@ def recommend(request):
     return JsonResponse({'recommendations': data, 'total': total})
 
 # 辅助函数：基于用户已经正确解答的题目，分析当前推荐题目的标签交集，生成推荐理由。
-@login_required
 def get_recommend_reason(user, problem):
     # 获取用户做过的题目的标签（仅考虑通过的题目）
     user_ac_problems = Submission.objects.filter(
