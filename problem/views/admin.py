@@ -709,7 +709,7 @@ class FPSProblemImport(CSRFExemptAPIView):
 
 # ai生成题目
 class ProblemGenerateWithAIAPI(APIView):
-    permission_classes = [IsAdminUser]  # 只允许 admin 和 superadmin
+    # permission_classes = [IsAdminUser]  # 只允许 admin 和 superadmin
 
     def post(self, request):
         serializer = GenerateProblemWithAISerializer(data=request.data)
