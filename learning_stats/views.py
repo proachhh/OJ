@@ -34,12 +34,35 @@ def learning_stats(request):
     tag_stats.sort(key=lambda x: x['accuracy'])
     # 击败百分比
     beat_percent = get_beat_percent(user)
+    # 语言掌握统计
+    lang_stats = []
+    # 按语言分组统计提交次数和正确次数
+    lang_groups = Submission.objects.filter(user_id=user.id).values('language').annotate(
+        total=Count('id'),
+        ac=Count('id', filter=Q(result=JudgeStatus.ACCEPTED))
+    )
+    for group in lang_groups:
+        lang = group['language']
+        total = group['total']
+        ac = group['ac']
+        acc_rate = round(ac / total * 100, 1) if total else 0
+        lang_stats.append({
+            'lang_name': lang,
+            'total': total,
+            'ac': ac,
+            'accuracy': acc_rate,
+        })
+    # 按正确率升序排序（与知识点保持一致）
+    lang_stats.sort(key=lambda x: x['accuracy'])
+
+    # 修改返回的 data 字典
     data = {
         'total_submissions': total_submissions,
         'total_ac': total_ac,
         'accuracy': accuracy,
         'beat_percent': beat_percent,
         'tags': tag_stats,
+        'lang_stats': lang_stats,   # 新增字段
     }
     return JsonResponse(data)
 
