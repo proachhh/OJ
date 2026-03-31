@@ -52,6 +52,7 @@ LOCAL_APPS = [
     'options',
     'judge',
     'spark_ai',
+    'learning_stats',
 ]
 
 INSTALLED_APPS = VENDOR_APPS + LOCAL_APPS 
