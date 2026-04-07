@@ -19,7 +19,7 @@ EOS
 
 COPY ./ /app/
 # 关键：复制本地构建的前端静态文件（dist 目录必须存在于构建上下文中）
-COPY ./dist /app/dist
+COPY frontend_dist /app/dist
 
 RUN chmod -R u=rwX,go=rX ./ && chmod +x ./deploy/entrypoint.sh
 
