@@ -1,7 +1,7 @@
 from django.conf.urls import include, url
 from django.urls import path
 
-from learning_stats.views import learning_stats, recommend, learning_trend
+from learning_stats.views import learning_stats, recommend, learning_trend, learning_path
 
 urlpatterns = [
     url(r"^api/", include("account.urls.oj")),
@@ -21,4 +21,5 @@ urlpatterns = [
     path('api/learning-stats/', learning_stats, name='learning_stats'),
     path('api/recommend/', recommend, name='recommend'),
     path('api/learning-trend/', learning_trend, name='learning-trend'),
+    path('api/learning-path/', learning_path, name='learning_path'),
 ]
