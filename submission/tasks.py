@@ -85,7 +85,7 @@ def sync_submission_to_neo4j(submission_id):
     problem__id = sub.problem._id
     problem_title = sub.problem.title
     problem_difficulty = sub.problem.difficulty
-    result = 'result': sub.result
+    result = sub.result
     language = sub.language
     create_time = sub.create_time.isoformat()
 
