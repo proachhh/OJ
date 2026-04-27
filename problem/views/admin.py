@@ -225,6 +225,11 @@ class ProblemAPI(ProblemBase):
             except ProblemTag.DoesNotExist:
                 tag = ProblemTag.objects.create(name=item)
             problem.tags.add(tag)
+
+        # 同步到 Neo4j 知识图谱
+        from submission.tasks import sync_problem_to_neo4j
+        sync_problem_to_neo4j.send(problem.id)
+
         return self.success(ProblemAdminSerializer(problem).data)
 
     @problem_permission_required
@@ -291,6 +296,10 @@ class ProblemAPI(ProblemBase):
                 tag = ProblemTag.objects.create(name=tag)
             problem.tags.add(tag)
 
+        # 同步到 Neo4j 知识图谱
+        from submission.tasks import sync_problem_to_neo4j
+        sync_problem_to_neo4j.send(problem.id)
+
         return self.success()
 
     @problem_permission_required
@@ -346,6 +355,11 @@ class ContestProblemAPI(ProblemBase):
             except ProblemTag.DoesNotExist:
                 tag = ProblemTag.objects.create(name=item)
             problem.tags.add(tag)
+
+        # 同步到 Neo4j 知识图谱
+        from submission.tasks import sync_problem_to_neo4j
+        sync_problem_to_neo4j.send(problem.id)
+
         return self.success(ProblemAdminSerializer(problem).data)
 
     def get(self, request):
@@ -420,6 +434,11 @@ class ContestProblemAPI(ProblemBase):
             except ProblemTag.DoesNotExist:
                 tag = ProblemTag.objects.create(name=tag)
             problem.tags.add(tag)
+
+        # 同步到 Neo4j 知识图谱
+        from submission.tasks import sync_problem_to_neo4j
+        sync_problem_to_neo4j.send(problem.id)
+
         return self.success()
 
     def delete(self, request):

@@ -12,6 +12,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+_recommend_model = None
+_recommend_mappings = None
+
 @login_required
 def learning_stats(request):
     user = request.user
@@ -178,6 +181,31 @@ def recommend(request):
         if pid not in seen_ids:
             seen_ids.add(pid)
             unique_recs.append(rec)
+
+    # 新增根据模型排序
+    model, mappings = get_recommend_model()
+    if model is not None and mappings is not None:
+        user_id = request.user.id
+        user_inner_id = mappings['user2id'].get(user_id)
+        if user_inner_id is not None:
+            candidate_ids = []
+            candidate_inner_ids = []
+            for rec in unique_recs:
+                pid = rec['id']
+                inner_id = mappings['prob2id'].get(pid)
+                if inner_id is not None:
+                    candidate_ids.append(pid)
+                    candidate_inner_ids.append(inner_id)
+            if candidate_inner_ids:
+                import torch
+                user_tensor = torch.tensor([user_inner_id] * len(candidate_inner_ids), dtype=torch.long)
+                item_tensor = torch.tensor(candidate_inner_ids, dtype=torch.long)
+                with torch.no_grad():
+                    scores = model(user_tensor, item_tensor).numpy().flatten()
+                scored = list(zip(candidate_ids, scores))
+                scored.sort(key=lambda x: x[1], reverse=True)
+                rec_dict = {rec['id']: rec for rec in unique_recs}
+                unique_recs = [rec_dict[pid] for pid, _ in scored if pid in rec_dict]
 
     paged_recs = unique_recs[offset:offset+limit]
     total = len(unique_recs)
@@ -446,9 +474,6 @@ def enrich_path_with_problems(path_topics, username):
             enriched.append({'topic': topic, 'problem': None})
     return enriched
 
-from django.http import JsonResponse
-from utils.neo4j_client import neo4j_client
-
 def knowledge_graph_overview(request):
     """
     返回知识图谱概览数据，用于首页可视化
@@ -473,3 +498,32 @@ def knowledge_graph_overview(request):
     edges = [{'source': record['source'], 'target': record['target']} for record in edges_result]
 
     return JsonResponse({'nodes': nodes, 'edges': edges})
+
+def get_recommend_model():
+    global _recommend_model, _recommend_mappings
+    if _recommend_model is not None:
+        return _recommend_model, _recommend_mappings
+    try:
+        # 延迟导入，只有在模型真正需要时才尝试加载
+        import torch
+        import pickle
+        from recommend.model import SimpleRecommender
+        from django.conf import settings
+        base = settings.BASE_DIR
+        with open(base / 'recommend_data.pkl', 'rb') as f:
+            data = pickle.load(f)
+        _recommend_mappings = {
+            'user2id': data['user2id'],
+            'prob2id': data['prob2id'],
+        }
+        num_users = data['num_users']
+        num_items = data['num_items']
+        model = SimpleRecommender(num_users, num_items, emb_dim=64)
+        model.load_state_dict(torch.load(base / 'recommend_model.pt', map_location='cpu'))
+        model.eval()
+        _recommend_model = model
+        return _recommend_model, _recommend_mappings
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Recommend model not available: {e}")
+        return None, None

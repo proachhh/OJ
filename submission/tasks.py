@@ -6,6 +6,68 @@ from utils.neo4j_client import neo4j_client
 logger = logging.getLogger(__name__)
 
 @dramatiq.actor(max_retries=3)
+def sync_problem_to_neo4j(problem_id):
+    """同步题目和标签到 Neo4j 知识图谱"""
+    from problem.models import Problem
+
+    try:
+        problem = Problem.objects.prefetch_related('tags').get(id=problem_id)
+    except Problem.DoesNotExist:
+        logger.error(f"Problem {problem_id} not found")
+        return
+
+    client = neo4j_client
+
+    params = {
+        'problem_id': problem.id,
+        '_id': problem._id,
+        'title': problem.title,
+        'difficulty': problem.difficulty,
+        'source': problem.source or '',
+        'time_limit': problem.time_limit,
+        'memory_limit': problem.memory_limit,
+    }
+
+    queries = [
+        # 创建/更新题目节点 
+        """
+        MERGE (p:Problem {problem_id: $problem_id})
+        SET p._id = $_id,
+            p.title = $title,
+            p.difficulty = $difficulty,
+            p.source = $source,
+            p.time_limit = $time_limit,
+            p.memory_limit = $memory_limit
+        """,
+    ]
+
+    # 获取题目标签列表
+    tags = [tag.name for tag in problem.tags.all()]
+
+    # 如果存在标签，创建 BELONGS_TO 关系
+    if tags:
+        queries.append(
+            """
+            UNWIND $tags AS tag
+            MERGE (t:Topic {name: tag})
+            WITH t
+            MATCH (p:Problem {problem_id: $problem_id})
+            MERGE (p)-[:BELONGS_TO]->(t)
+            """
+        )
+        params['tags'] = tags
+
+    try:
+        with client._driver.session() as session:
+            for query in queries:
+                session.run(query, params)
+        logger.info(f"Synced problem {problem_id} to Neo4j with tags: {tags}")
+    except Exception as e:
+        logger.exception(f"Failed to sync problem {problem_id}: {e}")
+        raise
+
+
+@dramatiq.actor(max_retries=3)
 def sync_submission_to_neo4j(submission_id):
     from submission.models import Submission
     from problem.models import Problem
@@ -23,7 +85,7 @@ def sync_submission_to_neo4j(submission_id):
     problem__id = sub.problem._id
     problem_title = sub.problem.title
     problem_difficulty = sub.problem.difficulty
-    result = str(sub.result)
+    result = 'result': sub.result
     language = sub.language
     create_time = sub.create_time.isoformat()
 
