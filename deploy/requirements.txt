@@ -26,3 +26,4 @@ torch==2.6.0
 torchvision==0.21.0
 torchaudio==2.6.0
 torch-geometric==2.7.0
+openai>=1.0.0

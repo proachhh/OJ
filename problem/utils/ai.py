@@ -1,7 +1,7 @@
 # problem/utils/ai.py
 import json
 import re
-from spark_ai.utils import ask_spark  # 假设 ask_spark 接收一个字符串参数
+from aiChat.utils import ask_spark  # 假设 ask_spark 接收一个字符串参数
 
 def generate_problem_by_ai(prompt: str) -> dict:
     """
