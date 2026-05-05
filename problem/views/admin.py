@@ -163,6 +163,52 @@ class TestCaseAPI(CSRFExemptAPIView, TestCaseZipProcessor):
         return self.success({"id": test_case_id, "info": info, "spj": spj})
 
 
+class TestCasePreviewAPI(APIView):
+    @problem_permission_required
+    def get(self, request):
+        test_case_id = request.GET.get("test_case_id")
+        if not test_case_id:
+            return self.error("Parameter error, test_case_id is required")
+
+        test_case_dir = os.path.join(settings.TEST_CASE_DIR, test_case_id)
+        if not os.path.isdir(test_case_dir):
+            return self.error("Test case does not exist")
+
+        info_path = os.path.join(test_case_dir, "info")
+        if not os.path.isfile(info_path):
+            return self.error("Test case info file not found")
+
+        with open(info_path, "r", encoding="utf-8") as f:
+            info = json.load(f)
+
+        test_cases = []
+        for key in sorted(info.get("test_cases", {}).keys(), key=int):
+            item = info["test_cases"][key]
+            input_path = os.path.join(test_case_dir, item["input_name"])
+            input_preview = ""
+            if os.path.isfile(input_path):
+                with open(input_path, "r", encoding="utf-8", errors="replace") as f:
+                    input_preview = f.read(500)
+
+            output_preview = ""
+            output_name = item.get("output_name", "")
+            if output_name:
+                output_path = os.path.join(test_case_dir, output_name)
+                if os.path.isfile(output_path):
+                    with open(output_path, "r", encoding="utf-8", errors="replace") as f:
+                        output_preview = f.read(500)
+
+            test_cases.append({
+                "index": key,
+                "input_name": item["input_name"],
+                "output_name": output_name,
+                "input_preview": input_preview,
+                "output_preview": output_preview,
+            })
+
+        return self.success({"test_cases": test_cases})
+
+
 class CompileSPJAPI(APIView):
     @validate_serializer(CompileSPJSerializer)
     def post(self, request):

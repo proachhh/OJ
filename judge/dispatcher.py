@@ -99,7 +99,9 @@ class JudgeDispatcher(DispatcherBase):
         super().__init__()
         self.submission = Submission.objects.get(id=submission_id)
         self.contest_id = self.submission.contest_id
-        self.last_result = self.submission.result if self.submission.info else None
+        # 判断是否重判：info 中有 data 字段说明曾经判题过
+        has_info = bool(self.submission.info and self.submission.info.get("data"))
+        self.last_result = self.submission.result if has_info else None
 
         if self.contest_id:
             self.problem = Problem.objects.select_related("contest").get(id=problem_id, contest_id=self.contest_id)
